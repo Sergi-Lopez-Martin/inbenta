@@ -1,0 +1,47 @@
+version: '3.8'
+services:
+  nuxt:
+    build: ./frontend
+    container_name: nuxt
+    ports:
+      - 8800:3000
+    volumes:
+      - ./frontend/src:/workspace
+    working_dir: /workspace
+    command: yarn run dev
+    networks:
+      - yodabot-network
+  
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: api
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: api
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./backend:/var/www
+      - ./backend/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - yodabot-network
+
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8000:80"
+    volumes:
+      - ./backend:/var/www
+      - ./backend/nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - yodabot-network
+
+networks:
+  yodabot-network:
+    driver: bridge
